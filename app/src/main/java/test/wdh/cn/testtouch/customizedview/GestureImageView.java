@@ -3,6 +3,7 @@ package test.wdh.cn.testtouch.customizedview;
 import android.content.Context;
 import android.graphics.Matrix;
 import android.graphics.PointF;
+import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.util.AttributeSet;
@@ -34,6 +35,7 @@ public class GestureImageView extends ImageView implements ViewTreeObserver.OnGl
     private PointF dragPointF;
     private float preDistance = 0;
     private float[] initMatrixValues = new float[9];
+    private static final int SCALE_RATE = 4;//修改此值用以修改缩放速率
 
     public GestureImageView(Context context) {
         super(context);
@@ -82,6 +84,7 @@ public class GestureImageView extends ImageView implements ViewTreeObserver.OnGl
             case MotionEvent.ACTION_DOWN:
                 scalePointF = null;
                 preDistance = 0;
+                dragPointF = null;
                 break;
             case MotionEvent.ACTION_MOVE:
                 if (event.getPointerCount() == 2) {//两点触摸事件处理
@@ -95,7 +98,7 @@ public class GestureImageView extends ImageView implements ViewTreeObserver.OnGl
                         scalePointF = new PointF((fX + sX) / 2.0f, (fY + sY) / 2.0f);
                         preDistance = distance;
                     } else {
-                        float scale = (distance - preDistance) / mDistance * 8;
+                        float scale = (distance - preDistance) / mDistance * SCALE_RATE;//修改这个值可以更改缩放速率
                         float judge = currentScale + scale;
                         scale = judge > MAX_SCALE || judge < MIN_SCALE ?
                                 (judge > MAX_SCALE ? MAX_SCALE - currentScale : MIN_SCALE - currentScale) :
@@ -106,16 +109,17 @@ public class GestureImageView extends ImageView implements ViewTreeObserver.OnGl
                     preDistance = distance;
                 }
                 if (event.getPointerCount() == 1) { //处理移动事件
-                    Log.i(TAG, "处理移动事件");
                     scalePointF = null;
                     if (dragPointF == null) {
                         dragPointF = new PointF(event.getX(), event.getY());
                     } else {
-                        float dragX = event.getX() - dragPointF.x;
-                        float dragY = event.getY() - dragPointF.y;
-                        dragPointF = new PointF(event.getX(), event.getY());
-                        Log.i(TAG, "dragX = " + dragX + "  dragY = " + dragY);
-                        drag(dragX, dragY);
+                        float x = event.getX();
+                        float y = event.getY();
+
+                        drag(x - dragPointF.x,
+                                y - dragPointF.y);
+
+                        dragPointF = new PointF(x, y);
                     }
                 }
                 break;
@@ -123,9 +127,11 @@ public class GestureImageView extends ImageView implements ViewTreeObserver.OnGl
                 if (event.getPointerCount() == 1) {
                     scalePointF = null;
                     preDistance = 0;
+                    dragPointF = null;
                 }
                 break;
             case MotionEvent.ACTION_UP:
+                dragPointF = null;
                 break;
             default:
                 break;
@@ -142,7 +148,8 @@ public class GestureImageView extends ImageView implements ViewTreeObserver.OnGl
     private void drag(float dragX, float dragY) {
         mMatrix.postTranslate(dragX, dragY);
         setImageMatrix(mMatrix);
-        mMatrix.setValues(mMatrixValues);
+        mMatrix.getValues(mMatrixValues);
+        getImageRectF();
     }
 
     /**
@@ -154,11 +161,34 @@ public class GestureImageView extends ImageView implements ViewTreeObserver.OnGl
     private void scale(float scale, PointF f) {
         mMatrix.postScale(scale, scale, f.x, f.y);
         mMatrix.getValues(mMatrixValues);
+        getImageRectF();
         if (currentScale == MIN_SCALE) {//缩放到初始位置，将图片设置为初始位置,此处可以添加动画，请随意发挥。
             mMatrix.setValues(initMatrixValues);
             setImageMatrix(mMatrix);
         }
         setImageMatrix(mMatrix);
+    }
+
+
+    private void adjustImageMatrix() {
+
+    }
+
+    /**
+     * 返回Drawable的矩阵
+     *
+     * @return
+     */
+    private RectF getImageRectF() {
+        RectF rect = new RectF();
+        Matrix matrix = mMatrix;
+        Drawable d = getDrawable();
+        if (d != null) {
+            rect.set(0, 0, d.getIntrinsicWidth(), d.getIntrinsicHeight());
+            matrix.mapRect(rect);
+        }
+        Log.i(TAG, rect.toShortString());
+        return rect;
     }
 
     @Override
@@ -190,6 +220,7 @@ public class GestureImageView extends ImageView implements ViewTreeObserver.OnGl
             mMatrix.getValues(mMatrixValues);
             mMatrix.getValues(initMatrixValues);
             setImageMatrix(mMatrix);
+            getImageRectF();
         }
 
     }
