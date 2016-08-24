@@ -4,17 +4,17 @@
     android:layout_height="match_parent"
     android:background="#ff000000">
 
-    <include
-        android:id="@+id/topBar"
-        layout="@layout/bar_top"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+
 
     <test.wdh.cn.testtouch.customizedview.GestureImageView
         android:id="@+id/gestureIV"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:src="@drawable/a_meitu_1" />
-
+    <include
+        android:id="@+id/topBar"
+        layout="@layout/bar_top"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
 
 </RelativeLayout>
