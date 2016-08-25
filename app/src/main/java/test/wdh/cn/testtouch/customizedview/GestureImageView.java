@@ -1,17 +1,18 @@
 package test.wdh.cn.testtouch.customizedview;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.Matrix;
 import android.graphics.PointF;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.ViewTreeObserver;
 import android.widget.ImageView;
 
+import test.wdh.cn.testtouch.R;
 import test.wdh.cn.testtouch.constant.GlobalConstant;
 
 /**
@@ -27,15 +28,15 @@ public class GestureImageView extends ImageView implements ViewTreeObserver.OnGl
     private static int mWidth = GlobalConstant.getDeviceWidth();
     private static int mHeight = GlobalConstant.getDeviceHeight();
     private static int mDistance = (int) Math.sqrt((Math.pow(mWidth, 2) + Math.pow(mHeight, 2)));
-    private final float MAX_SCALE = 4.0f;
+    private final float MAX_SCALE = 2.0f;
     private float MIN_SCALE;
-    private Matrix mMatrix = new Matrix();
     private float[] mMatrixValues = new float[9];
+    private float[] initMatrixValues = new float[9];
+    private Matrix mMatrix = new Matrix();
     private PointF scalePointF;
     private PointF dragPointF;
     private float preDistance = 0;
-    private float[] initMatrixValues = new float[9];
-    private static final int SCALE_RATE = 4;//修改此值用以修改缩放速率
+    private static final int SCALE_RATE = 6;//修改此值用以修改缩放速率
 
     public GestureImageView(Context context) {
         super(context);
@@ -76,6 +77,17 @@ public class GestureImageView extends ImageView implements ViewTreeObserver.OnGl
         }
     }
 
+    @Override
+    public void setImageResource(int resId) {
+        super.setImageResource(resId);
+        adjustImageMatrix();
+    }
+
+    @Override
+    public void setImageBitmap(Bitmap bm) {
+        super.setImageBitmap(bm);
+        adjustImageMatrix();
+    }
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
@@ -140,12 +152,55 @@ public class GestureImageView extends ImageView implements ViewTreeObserver.OnGl
     }
 
     /**
+     * 根据图像矩形处理拖拽的X值
+     *
+     * @param rect  图像矩形
+     * @param dragX 拖拽的X值
+     * @return 处理以后dragX值
+     */
+    private float handleDragX(RectF rect, float dragX) {
+        if (rect.left < 0 || rect.right > mWidth) { // 放大时，如果内容宽度大于屏幕，左右边界不能出现黑边
+            if (rect.left + dragX > 0) {
+                dragX = 0 - rect.left;
+            } else if (rect.right + dragX < mWidth) {
+                dragX = mWidth - rect.right;
+            }
+        } else {
+            dragX = 0;
+        }
+        return dragX;
+    }
+
+    /**
+     * 根据图像矩形处理拖拽的Y值
+     *
+     * @param rect  图像矩形
+     * @param dragY 拖拽的Y值
+     * @return 处理以后dragY值
+     */
+    private float handleDragY(RectF rect, float dragY) {
+        if (rect.top <= 0 && rect.bottom >= mHeight) { // 放大时，如果内容宽度大于屏幕，左右边界不能出现黑边
+            if (rect.top + dragY > 0) {
+                dragY = 0 - rect.top;
+            } else if (rect.bottom + dragY < mHeight) {
+                dragY = mHeight - rect.bottom;
+            }
+        } else {
+            dragY = 0;
+        }
+        return dragY;
+    }
+
+    /**
      * 拖拽imageView
      *
      * @param dragX X轴的移动距离
      * @param dragY Y轴的移动距离
      */
     private void drag(float dragX, float dragY) {
+        RectF rect = getImageRectF();
+        dragX = handleDragX(rect, dragX);
+        dragY = handleDragY(rect, dragY);
         mMatrix.postTranslate(dragX, dragY);
         setImageMatrix(mMatrix);
         mMatrix.getValues(mMatrixValues);
@@ -159,7 +214,7 @@ public class GestureImageView extends ImageView implements ViewTreeObserver.OnGl
      * @param f     包含缩放中心点的PointF
      */
     private void scale(float scale, PointF f) {
-        mMatrix.postScale(scale, scale, f.x, f.y);
+        mMatrix.postScale(scale, scale, f.x, mHeight / 2.0f);
         mMatrix.getValues(mMatrixValues);
         getImageRectF();
         if (currentScale == MIN_SCALE) {//缩放到初始位置，将图片设置为初始位置,此处可以添加动画，请随意发挥。
@@ -170,14 +225,44 @@ public class GestureImageView extends ImageView implements ViewTreeObserver.OnGl
     }
 
 
+    /**
+     * 将图像调整到适合的位置
+     */
     private void adjustImageMatrix() {
+        Drawable d = getDrawable();
+        if (d == null) {
+            setImageResource(R.drawable.ic_launcher);
+            return;
+        }
+        int width = d.getIntrinsicWidth();
+        int height = d.getIntrinsicHeight();
+        float scale = 1.0f;
+        // 有3种情况，1、宽大于屏幕宽。2、高大于屏幕高。3、宽和高均大于屏幕，图像宽高均小于设备的暂时不考虑
+        if (width > mWidth && height < mHeight) {
+            scale = mWidth * 1.0f / width;
+        }
+        if (height > mHeight && width < mWidth) {
+            scale = mHeight * 1.0f / height;
+        }
+        if (height > mHeight && width > mWidth) {
+            scale = Math.min(mWidth * 1.0f / width, mHeight * 1.0f / height);
+        }
+        currentScale = scale;
+        MIN_SCALE = scale;
+        mMatrix = new Matrix();
+        mMatrix.postTranslate((mWidth - width) / 2.0f, (mHeight - height) / 2.0f);
+        mMatrix.postScale(currentScale, currentScale, mWidth / 2.0f, mHeight / 2.0f);
+        mMatrix.getValues(mMatrixValues);
+        mMatrix.getValues(initMatrixValues);
+        setImageMatrix(mMatrix);
+        getImageRectF();
 
     }
 
     /**
      * 返回Drawable的矩阵
      *
-     * @return
+     * @return imageView矩阵数据
      */
     private RectF getImageRectF() {
         RectF rect = new RectF();
@@ -187,41 +272,15 @@ public class GestureImageView extends ImageView implements ViewTreeObserver.OnGl
             rect.set(0, 0, d.getIntrinsicWidth(), d.getIntrinsicHeight());
             matrix.mapRect(rect);
         }
-        Log.i(TAG, rect.toShortString());
+//        Log.i(TAG,rect.toShortString());
         return rect;
     }
 
     @Override
     public void onGlobalLayout() {
-        Drawable d = getDrawable();
         if (isOnce) {
             isOnce = false;
-            if (d == null) {
-                return;
-            }
-            int width = d.getIntrinsicWidth();
-            int height = d.getIntrinsicHeight();
-            float scale = 1.0f;
-            // 有3种情况，1、宽大于屏幕宽。2、高大于屏幕高。3、宽和高均大于屏幕，图像宽高均小于设备的暂时不考虑
-            if (width > mWidth && height < mHeight) {
-                scale = mWidth * 1.0f / width;
-            }
-            if (height > mHeight && width < mWidth) {
-                scale = mHeight * 1.0f / height;
-            }
-            if (height > mHeight && width > mWidth) {
-                scale = Math.min(mWidth * 1.0f / width, mHeight * 1.0f / height);
-            }
-            currentScale = scale;
-            MIN_SCALE = scale;
-            mMatrix.postTranslate((mWidth - width) / 2.0f, (mHeight - height) / 2.0f);
-
-            mMatrix.postScale(currentScale, currentScale, mWidth / 2.0f, mHeight / 2.0f);
-            mMatrix.getValues(mMatrixValues);
-            mMatrix.getValues(initMatrixValues);
-            setImageMatrix(mMatrix);
-            getImageRectF();
+            adjustImageMatrix();
         }
-
     }
 }
