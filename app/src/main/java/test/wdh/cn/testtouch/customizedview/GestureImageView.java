@@ -59,6 +59,9 @@ public class GestureImageView extends ImageView implements ViewTreeObserver.OnGl
     private void initImageAttribute() {
         setScaleType(ScaleType.MATRIX);
         setFocusable(true);// 触摸事件开启此参数用以搞事情
+        if(getParent()!=null){
+            getParent().requestDisallowInterceptTouchEvent(true);
+        }
     }
 
     @Override
