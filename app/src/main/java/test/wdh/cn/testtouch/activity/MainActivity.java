@@ -1,6 +1,7 @@
 package test.wdh.cn.testtouch.activity;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
@@ -31,8 +32,9 @@ public class MainActivity extends Activity {
     private MyHandler myHandler;
     private static final String IMAGE_URL = "http://b.hiphotos.baidu.com/album/pic/item/caef76094b36acafe72d0e667cd98d1000e99c5f.jpg?psign=e72d0e667cd98d1001e93901213fb80e7aec54e737d1b867";
     private GestureImageView mGestureIV;
-    private static final int SWAP_IMAGE_RESOURCE=1;
-    private static final int GET_NET_IMAGE_SUCCESS=2;
+    private static final int SWAP_IMAGE_RESOURCE = 1;
+    private static final int GET_NET_IMAGE_SUCCESS = 2;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -46,6 +48,12 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View v) {
                 finish();
+            }
+        });
+        findViewById(R.id.tvPager).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(MainActivity.this, SecondActivity.class));
             }
         });
 //        myHandler = new MyHandler(this);

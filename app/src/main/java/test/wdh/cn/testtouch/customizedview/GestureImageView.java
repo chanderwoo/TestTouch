@@ -59,10 +59,20 @@ public class GestureImageView extends ImageView implements ViewTreeObserver.OnGl
     private void initImageAttribute() {
         setScaleType(ScaleType.MATRIX);
         setFocusable(true);// 触摸事件开启此参数用以搞事情
-        if(getParent()!=null){
-            getParent().requestDisallowInterceptTouchEvent(true);
+        catchTouchEvent(true);
+    }
+
+    /**
+     * 是否捕获touch事件
+     *
+     * @param flag true捕获touch事件，false不捕获
+     */
+    public void catchTouchEvent(boolean flag) {
+        if (getParent() != null) {
+            getParent().requestDisallowInterceptTouchEvent(flag);
         }
     }
+
 
     @Override
     protected void onAttachedToWindow() {
@@ -97,6 +107,7 @@ public class GestureImageView extends ImageView implements ViewTreeObserver.OnGl
         int action = event.getAction();
         switch (action) {
             case MotionEvent.ACTION_DOWN:
+                catchTouchEvent(true);
                 scalePointF = null;
                 preDistance = 0;
                 dragPointF = null;
@@ -128,7 +139,7 @@ public class GestureImageView extends ImageView implements ViewTreeObserver.OnGl
     /**
      * 处理拖拽手势
      *
-     * @param event
+     * @param event 触摸Event
      */
     private void handleDragEvent(MotionEvent event) {
         scalePointF = null;
@@ -225,7 +236,10 @@ public class GestureImageView extends ImageView implements ViewTreeObserver.OnGl
         mMatrix.postTranslate(dragX, dragY);
         setImageMatrix(mMatrix);
         mMatrix.getValues(mMatrixValues);
-        getImageRectF();
+        rect = getImageRectF();
+        if (rect.left == 0 || rect.right == mWidth) {
+            catchTouchEvent(false);
+        }
     }
 
     /**
@@ -239,11 +253,11 @@ public class GestureImageView extends ImageView implements ViewTreeObserver.OnGl
     private float handleScaleDragX(Matrix matrix, float scale, PointF f) {
         matrix.postScale(scale, scale, f.x, mHeight / 2.0f);
         RectF rect = getImageRectF(matrix); // 根据拷贝过后的矩阵计算得出的矩形
-        float x=f.x;
+        float x = f.x;
         if (rect.left > 0) {// 如果计算后的左端超过边界
-            x=0;
+            x = 0;
         } else if (rect.right < mWidth) {
-            x=mWidth;
+            x = mWidth;
         }
         return x;
     }
@@ -256,7 +270,7 @@ public class GestureImageView extends ImageView implements ViewTreeObserver.OnGl
      */
     private void scale(float scale, PointF f) {
         Matrix matrix = new Matrix(mMatrix);
-        mMatrix.postScale(scale, scale, handleScaleDragX(matrix,scale,f), mHeight / 2.0f);
+        mMatrix.postScale(scale, scale, handleScaleDragX(matrix, scale, f), mHeight / 2.0f);
         mMatrix.getValues(mMatrixValues);
         getImageRectF();
         if (currentScale == MIN_SCALE) {// 缩放到初始位置，将图片设置为初始位置,此处可以添加动画，请随意发挥。
