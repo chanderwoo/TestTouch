@@ -99,44 +99,15 @@ public class GestureImageView extends ImageView implements ViewTreeObserver.OnGl
                 dragPointF = null;
                 break;
             case MotionEvent.ACTION_MOVE:
-                if (event.getPointerCount() == 2) {//两点触摸事件处理
-                    dragPointF = null;
-                    float fX = event.getX(0);
-                    float fY = event.getY(0);
-                    float sX = event.getX(1);
-                    float sY = event.getY(1);
-                    float distance = (float) Math.sqrt((Math.pow(fX - sX, 2) + Math.pow(fY - sY, 2)));
-                    if (scalePointF == null) {
-                        scalePointF = new PointF((fX + sX) / 2.0f, (fY + sY) / 2.0f);
-                        preDistance = distance;
-                    } else {
-                        float scale = (distance - preDistance) / mDistance * SCALE_RATE;//修改这个值可以更改缩放速率
-                        float judge = currentScale + scale;
-                        scale = judge > MAX_SCALE || judge < MIN_SCALE ?
-                                (judge > MAX_SCALE ? MAX_SCALE - currentScale : MIN_SCALE - currentScale) :
-                                scale;
-                        currentScale += scale;
-                        scale(currentScale / (currentScale - scale), scalePointF);
-                    }
-                    preDistance = distance;
+                if (event.getPointerCount() == 2) { //两点触摸事件处理
+                    handleScaleEvent(event);
                 }
                 if (event.getPointerCount() == 1) { //处理移动事件
-                    scalePointF = null;
-                    if (dragPointF == null) {
-                        dragPointF = new PointF(event.getX(), event.getY());
-                    } else {
-                        float x = event.getX();
-                        float y = event.getY();
-
-                        drag(x - dragPointF.x,
-                                y - dragPointF.y);
-
-                        dragPointF = new PointF(x, y);
-                    }
+                    handleDragEvent(event);
                 }
                 break;
             case MotionEvent.ACTION_POINTER_UP:
-                if (event.getPointerCount() == 1) {
+                if (event.getPointerCount() != 1) {
                     scalePointF = null;
                     preDistance = 0;
                     dragPointF = null;
@@ -149,6 +120,53 @@ public class GestureImageView extends ImageView implements ViewTreeObserver.OnGl
                 break;
         }
         return true;
+    }
+
+    /**
+     * 处理拖拽手势
+     *
+     * @param event
+     */
+    private void handleDragEvent(MotionEvent event) {
+        scalePointF = null;
+        if (dragPointF == null) {
+            dragPointF = new PointF(event.getX(), event.getY());
+        } else {
+            float x = event.getX();
+            float y = event.getY();
+
+            drag(x - dragPointF.x,
+                    y - dragPointF.y);
+
+            dragPointF = new PointF(x, y);
+        }
+    }
+
+    /**
+     * 处理缩放手势
+     *
+     * @param event 事件
+     */
+    private void handleScaleEvent(MotionEvent event) {
+        dragPointF = null;
+        float fX = event.getX(0);
+        float fY = event.getY(0);
+        float sX = event.getX(1);
+        float sY = event.getY(1);
+        float distance = (float) Math.sqrt((Math.pow(fX - sX, 2) + Math.pow(fY - sY, 2)));
+        if (scalePointF == null) {
+            scalePointF = new PointF((fX + sX) / 2.0f, (fY + sY) / 2.0f);
+            preDistance = distance;
+        } else {
+            float scale = (distance - preDistance) / mDistance * SCALE_RATE;//修改这个值可以更改缩放速率
+            float judge = currentScale + scale;
+            scale = judge > MAX_SCALE || judge < MIN_SCALE ?
+                    (judge > MAX_SCALE ? MAX_SCALE - currentScale : MIN_SCALE - currentScale) :
+                    scale;
+            currentScale += scale;
+            scale(currentScale / (currentScale - scale), scalePointF);
+        }
+        preDistance = distance;
     }
 
     /**
@@ -272,7 +290,6 @@ public class GestureImageView extends ImageView implements ViewTreeObserver.OnGl
             rect.set(0, 0, d.getIntrinsicWidth(), d.getIntrinsicHeight());
             matrix.mapRect(rect);
         }
-//        Log.i(TAG,rect.toShortString());
         return rect;
     }
 

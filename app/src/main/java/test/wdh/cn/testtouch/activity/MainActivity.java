@@ -31,7 +31,8 @@ public class MainActivity extends Activity {
     private MyHandler myHandler;
     private static final String IMAGE_URL = "http://b.hiphotos.baidu.com/album/pic/item/caef76094b36acafe72d0e667cd98d1000e99c5f.jpg?psign=e72d0e667cd98d1001e93901213fb80e7aec54e737d1b867";
     private GestureImageView mGestureIV;
-
+    private static final int SWAP_IMAGE_RESOURCE=1;
+    private static final int GET_NET_IMAGE_SUCCESS=2;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -69,10 +70,10 @@ public class MainActivity extends Activity {
             MainActivity aty = reference.get();
             if (aty != null) {
                 switch (msg.what) {
-                    case 1:
+                    case SWAP_IMAGE_RESOURCE:
                         aty.swapImageViewResource();
                         break;
-                    case 2:
+                    case GET_NET_IMAGE_SUCCESS:
                         aty.mGestureIV.setImageBitmap((Bitmap) msg.obj);
                         break;
                 }
@@ -93,7 +94,7 @@ public class MainActivity extends Activity {
 //            SystemClock.sleep(2000);
 //            MainActivity aty = reference.get();
 //            if (aty != null) {
-//                aty.myHandler.sendEmptyMessage(1);
+//                aty.myHandler.sendEmptyMessage(SWAP_IMAGE_RESOURCE);
 //            }
             MainActivity aty = reference.get();
             if (aty != null) {
@@ -119,13 +120,14 @@ public class MainActivity extends Activity {
                         if (aty != null) {
                             Bitmap bitmap = BitmapFactory.decodeFile(file.getAbsolutePath());
                             Message message = Message.obtain();
-                            message.what = 2;
+                            message.what = GET_NET_IMAGE_SUCCESS;
                             message.obj = bitmap;
                             aty.myHandler.sendMessage(message);
                         }
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
+                    //// TODO: 2016/8/25 暂时不做处理
                     Log.i(TAG, "图片下载线程出现问题 " + e.toString());
                 }
 
