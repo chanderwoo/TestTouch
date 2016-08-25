@@ -226,16 +226,37 @@ public class GestureImageView extends ImageView implements ViewTreeObserver.OnGl
     }
 
     /**
+     * 缩放时，处理边缘不过界
+     *
+     * @param matrix 拷贝的矩阵
+     * @param scale  缩放比例
+     * @param f      缩放中心点
+     * @return 返回X坐标的点
+     */
+    private float handleScaleDragX(Matrix matrix, float scale, PointF f) {
+        matrix.postScale(scale, scale, f.x, mHeight / 2.0f);
+        RectF rect = getImageRectF(matrix); // 根据拷贝过后的矩阵计算得出的矩形
+        float x=f.x;
+        if (rect.left > 0) {// 如果计算后的左端超过边界
+            x=0;
+        } else if (rect.right < mWidth) {
+            x=mWidth;
+        }
+        return x;
+    }
+
+    /**
      * 按照缩放比例和点进行缩放
      *
      * @param scale 缩放比例
      * @param f     包含缩放中心点的PointF
      */
     private void scale(float scale, PointF f) {
-        mMatrix.postScale(scale, scale, f.x, mHeight / 2.0f);
+        Matrix matrix = new Matrix(mMatrix);
+        mMatrix.postScale(scale, scale, handleScaleDragX(matrix,scale,f), mHeight / 2.0f);
         mMatrix.getValues(mMatrixValues);
         getImageRectF();
-        if (currentScale == MIN_SCALE) {//缩放到初始位置，将图片设置为初始位置,此处可以添加动画，请随意发挥。
+        if (currentScale == MIN_SCALE) {// 缩放到初始位置，将图片设置为初始位置,此处可以添加动画，请随意发挥。
             mMatrix.setValues(initMatrixValues);
             setImageMatrix(mMatrix);
         }
@@ -278,17 +299,32 @@ public class GestureImageView extends ImageView implements ViewTreeObserver.OnGl
     }
 
     /**
-     * 返回Drawable的矩阵
+     * 返回Drawable的矩形
      *
-     * @return imageView矩阵数据
+     * @param matrix 拷贝出来的矩阵
+     * @return imageView矩形数据
      */
-    private RectF getImageRectF() {
+    private RectF getImageRectF(Matrix matrix) {
         RectF rect = new RectF();
-        Matrix matrix = mMatrix;
         Drawable d = getDrawable();
         if (d != null) {
             rect.set(0, 0, d.getIntrinsicWidth(), d.getIntrinsicHeight());
             matrix.mapRect(rect);
+        }
+        return rect;
+    }
+
+    /**
+     * 返回Drawable的矩形
+     *
+     * @return imageView矩形数据
+     */
+    private RectF getImageRectF() {
+        RectF rect = new RectF();
+        Drawable d = getDrawable();
+        if (d != null) {
+            rect.set(0, 0, d.getIntrinsicWidth(), d.getIntrinsicHeight());
+            mMatrix.mapRect(rect);
         }
         return rect;
     }
