@@ -37,7 +37,7 @@ public class GestureImageView extends ImageView implements ViewTreeObserver.OnGl
     private PointF scalePointF;
     private PointF dragPointF;
     private float preDistance = 0;
-    private static final int SCALE_RATE = 6;//修改此值用以修改缩放速率
+    private static final int SCALE_RATE = 4;//修改此值用以修改缩放速率
 
     public GestureImageView(Context context) {
         super(context);
