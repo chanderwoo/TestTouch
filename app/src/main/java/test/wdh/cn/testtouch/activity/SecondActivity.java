@@ -26,10 +26,11 @@ public class SecondActivity extends Activity {
 
 
     private ViewPager mViewPager;
-    private static final int[] IMAGES = {R.drawable.a,
-            R.drawable.b_meitu_1, R.drawable.c_meitu_2,
+    private static final int[] IMAGES = {R.drawable.ic_launcher,
+            R.drawable.a, R.drawable.ic_launcher,
+            R.drawable.b_meitu_1, R.drawable.ic_launcher,
             R.drawable.d_meitu_3, R.drawable.b_meitu_1,
-            R.drawable.a, R.drawable.c_meitu_2};
+            R.drawable.a};
     private static final String MATCH_STR = "%s/%s";
     private TextView tvPage;
 

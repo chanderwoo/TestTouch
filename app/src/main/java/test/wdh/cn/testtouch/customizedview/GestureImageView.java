@@ -8,6 +8,7 @@ import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.ViewTreeObserver;
 import android.widget.ImageView;
@@ -28,7 +29,7 @@ public class GestureImageView extends ImageView implements ViewTreeObserver.OnGl
     private static int mWidth = GlobalConstant.getDeviceWidth();
     private static int mHeight = GlobalConstant.getDeviceHeight();
     private static int mDistance = (int) Math.sqrt((Math.pow(mWidth, 2) + Math.pow(mHeight, 2)));
-    private final float MAX_SCALE = 2.0f;
+    private final float MAX_SCALE = 4.0f; // 修改这个值可以修改缩放最大值
     private float MIN_SCALE;
     private float[] mMatrixValues = new float[9];
     private float[] initMatrixValues = new float[9];
@@ -148,10 +149,8 @@ public class GestureImageView extends ImageView implements ViewTreeObserver.OnGl
         } else {
             float x = event.getX();
             float y = event.getY();
-
             drag(x - dragPointF.x,
                     y - dragPointF.y);
-
             dragPointF = new PointF(x, y);
         }
     }
@@ -231,15 +230,40 @@ public class GestureImageView extends ImageView implements ViewTreeObserver.OnGl
      */
     private void drag(float dragX, float dragY) {
         RectF rect = getImageRectF();
+        catchTouchEvent(canDrag(rect));
         dragX = handleDragX(rect, dragX);
         dragY = handleDragY(rect, dragY);
         mMatrix.postTranslate(dragX, dragY);
         setImageMatrix(mMatrix);
         mMatrix.getValues(mMatrixValues);
-        rect = getImageRectF();
-        if (rect.left == 0 || rect.right == mWidth) {
-            catchTouchEvent(false);
+    }
+
+    /**
+     * 根据ImageView当前位置判断是否可以拖拽
+     *
+     * @param currentRect 当前的矩形
+     * @return true可以拖拽，false不可以
+     */
+    private boolean canDrag(RectF currentRect) {
+        RectF preRect = getInitialRectF();
+        boolean canDrag;
+        if (preRect.left > 0) {
+            canDrag = !(currentRect.left >= 0 || currentRect.right <= mWidth || (currentRect.left > 0 && currentScale == MAX_SCALE));
+        } else {
+            canDrag = !(currentRect.left == 0 || currentRect.right == mWidth);
         }
+        return canDrag;
+    }
+
+    /**
+     * 获取初始的图像矩形
+     *
+     * @return
+     */
+    private RectF getInitialRectF() {
+        Matrix preMatrix1 = new Matrix();
+        preMatrix1.setValues(initMatrixValues);
+        return getImageRectF(preMatrix1);
     }
 
     /**
@@ -253,11 +277,12 @@ public class GestureImageView extends ImageView implements ViewTreeObserver.OnGl
     private float handleScaleDragX(Matrix matrix, float scale, PointF f) {
         matrix.postScale(scale, scale, f.x, mHeight / 2.0f);
         RectF rect = getImageRectF(matrix); // 根据拷贝过后的矩阵计算得出的矩形
+        RectF preRect = getInitialRectF();
         float x = f.x;
-        if (rect.left > 0) {// 如果计算后的左端超过边界
-            x = 0;
-        } else if (rect.right < mWidth) {
-            x = mWidth;
+        if (preRect.left > 0) { // 图片初始矩形宽度小于屏幕宽度
+            x = rect.left > 0 || rect.right < mWidth ? mWidth / 2.0f : x;
+        } else {
+            x = rect.left > 0 ? 0 : (rect.right < mWidth ? mWidth : x);
         }
         return x;
     }
@@ -272,11 +297,12 @@ public class GestureImageView extends ImageView implements ViewTreeObserver.OnGl
         Matrix matrix = new Matrix(mMatrix);
         mMatrix.postScale(scale, scale, handleScaleDragX(matrix, scale, f), mHeight / 2.0f);
         mMatrix.getValues(mMatrixValues);
-        getImageRectF();
+//        getImageRectF();
         if (currentScale == MIN_SCALE) {// 缩放到初始位置，将图片设置为初始位置,此处可以添加动画，请随意发挥。
             mMatrix.setValues(initMatrixValues);
             setImageMatrix(mMatrix);
         }
+        Log.i(TAG, "currentScale = " + currentScale);
         setImageMatrix(mMatrix);
     }
 
