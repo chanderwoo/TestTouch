@@ -1,7 +1,7 @@
 #功能
 该项目主要是测试一个使用android.graphics.Matrix类配合手势操作来完成图片拖拽的ImageView，主要参考下列2篇文章：  
-<http://blog.csdn.net/nnmmbb/article/details/28419779> [解决ViewPager嵌入手势偶尔报错的]  
-第二篇文章稍后从私人pc贴上
+<http://www.jb51.net/article/83083.htm> [关于矩阵的用法和例子]  
+<http://blog.csdn.net/nnmmbb/article/details/28419779> [解决ViewPager嵌入滑动报错的]  
 #主要方法
 完成拖拽功能的方法是handleDragEvent(event);  
 完成缩放功能的是handleScaleEvent(event)，只支持双点缩放;  
